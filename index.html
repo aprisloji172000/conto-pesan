@@ -68,21 +68,18 @@
         .cart-items { flex: 1; overflow-y: auto; padding: 20px; }
         .cart-item { border-bottom: 1px solid #eee; padding: 12px 0; }
         
-        /* Shipping Badge */
         .shipping-info {
             background: #fff5f5; color: #c53030; padding: 10px; border-radius: 8px;
             margin: 10px 20px; font-size: 13px; text-align: center; border: 1px dashed #feb2b2;
         }
-        .shipping-free {
-            background: #f0fff4; color: #2f855a; border-color: #9ae6b4;
-        }
+        .shipping-free { background: #f0fff4; color: #2f855a; border-color: #9ae6b4; }
 
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 3000;
         }
         .modal.show { display: flex; }
-        .modal-content { background: white; border-radius: 15px; width: 90%; max-width: 450px; padding: 25px; }
+        .modal-content { background: white; border-radius: 15px; width: 90%; max-width: 450px; padding: 25px; overflow-y: auto; max-height: 90vh; }
         
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: bold; }
@@ -92,6 +89,12 @@
             width: 100%; background: #25d366; color: white; border: none;
             padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px;
+        }
+
+        .btn-location {
+            width: 100%; background: #007bff; color: white; border: none;
+            padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px;
+            margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;
         }
 
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1500; }
@@ -104,7 +107,12 @@
 
     <header class="header">
         <div class="header-content">
-            <div style="font-size: 20px; font-weight: bold;"><i class="fas fa-utensils"></i> Warung Digital</div>
+            <a href="https://aprisloji172000.github.io/dasboard-/" style="color: white; text-decoration: none; font-size: 20px; margin-right: 15px; display: flex; align-items: center;">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            
+            <div style="font-size: 20px; font-weight: bold; flex: 1;"><i class="fas fa-utensils"></i> Warung Digital</div>
+            
             <div class="cart-icon" onclick="toggleCart()">
                 <i class="fas fa-shopping-basket"></i>
                 <span class="cart-count" id="cartCount">0</span>
@@ -122,6 +130,13 @@
         </div>
 
         <div class="menu-grid" id="menuGrid"></div>
+
+        <div style="background: #fff5f5; border: 1px solid #feb2b2; padding: 15px; border-radius: 10px; margin-top: 30px; text-align: center;">
+            <p style="color: #c53030; font-weight: bold; font-size: 14px;">
+                <i class="fas fa-exclamation-triangle"></i> PERHATIAN:<br>
+                PESANAN COD HANYA DIANTAR UNTUK WILAYAH DESA SENDURO
+            </p>
+        </div>
     </div>
 
     <div class="overlay" id="overlay" onclick="toggleCart()"></div>
@@ -155,6 +170,14 @@
                 <label>Alamat Lengkap / No. Meja</label>
                 <textarea id="custAddr" placeholder="Tulis alamat pengantaran" rows="3"></textarea>
             </div>
+            <div class="form-group">
+                <label>Link Lokasi Google Maps</label>
+                <button type="button" class="btn-location" onclick="getLocation()">
+                    <i class="fas fa-map-marker-alt"></i> Ambil Lokasi Otomatis
+                </button>
+                <input type="text" id="custLoc" placeholder="Link lokasi akan muncul di sini">
+                <small style="font-size: 11px; color: #888;">Atau buka Maps > Pilih Lokasi > Share > Salin Link</small>
+            </div>
             <button class="btn-wa" onclick="sendWhatsApp()"><i class="fab fa-whatsapp"></i> Konfirmasi & Kirim WA</button>
             <button onclick="closeCheckout()" style="width:100%; background:none; border:none; margin-top:15px; color:#999; cursor:pointer; font-size: 14px;">Batal</button>
         </div>
@@ -167,7 +190,7 @@
         const menuData = [
             { id: 1, name: "Nasi Goreng", price: 10000, icon: "🍳", hasOptions: true },
             { id: 2, name: "Mie Goreng", price: 10000, icon: "🍜", hasOptions: true },
-            { id: 8, name: "Mawut", price: 10000, icon: "🍳", hasOptions: true }, // Menu Baru
+            { id: 8, name: "Mawut", price: 10000, icon: "🍳", hasOptions: true },
             { id: 3, name: "Es Teh", price: 3000, icon: "🍹", hasOptions: false },
             { id: 4, name: "Teh Panas", price: 3000, icon: "☕", hasOptions: false },
             { id: 5, name: "Es Jeruk", price: 3000, icon: "🥤", hasOptions: false },
@@ -269,16 +292,15 @@
                 `;
             }).join('');
 
-            // Logika COD Gratis Minimal 50.000
             if (cart.length > 0) {
                 if (totalBelanja >= MIN_FREE_ONGKIR) {
                     shipInfo.innerHTML = `<div class="shipping-info shipping-free">
-                        <i class="fas fa-truck-moving"></i> Mantap! Anda dapat <b>GRATIS ONGKIR COD</b>
+                        <i class="fas fa-truck-moving"></i> Mantap! Anda dapat <b>GRATIS ONGKIR (Senduro)</b>
                     </div>`;
                 } else {
                     const kurangnya = MIN_FREE_ONGKIR - totalBelanja;
                     shipInfo.innerHTML = `<div class="shipping-info">
-                        Belanja <b>Rp ${kurangnya.toLocaleString()} lagi</b> untuk Gratis Ongkir COD
+                        Belanja <b>Rp ${kurangnya.toLocaleString()} lagi</b> untuk Gratis Ongkir
                     </div>`;
                 }
             } else {
@@ -310,19 +332,51 @@
             document.getElementById('checkoutModal').classList.remove('show');
         }
 
+        function getLocation() {
+            const locInput = document.getElementById('custLoc');
+            if (navigator.geolocation) {
+                locInput.value = "Sedang mengambil lokasi...";
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        locInput.value = `https://www.google.com/maps?q=${lat},${lon}`;
+                        alert("Lokasi berhasil diambil!");
+                    },
+                    (error) => {
+                        alert("Gagal mengambil lokasi. Pastikan GPS aktif dan izin diberikan.");
+                        locInput.value = "";
+                    }
+                );
+            } else {
+                alert("Browser tidak mendukung fitur lokasi.");
+            }
+        }
+
         function sendWhatsApp() {
             const name = document.getElementById('custName').value;
             const addr = document.getElementById('custAddr').value;
+            const loc = document.getElementById('custLoc').value;
 
             if (!name || !addr) return alert("Harap isi nama dan alamat pengiriman!");
+
+            const now = new Date();
+            const jam = now.getHours().toString().padStart(2, '0');
+            const menit = now.getMinutes().toString().padStart(2, '0');
+            const detik = now.getSeconds().toString().padStart(2, '0');
+            const noAntrian = `WD-${jam}${menit}${detik}`;
 
             let totalBelanja = 0;
             cart.forEach(i => totalBelanja += (i.price * i.qty));
 
-            let msg = `*PESANAN BARU - Warung Digital*\n\n`;
+            let msg = `*NOMOR ANTRIAN: ${noAntrian}*\n`;
+            msg += `*PESANAN BARU - Warung Digital*\n\n`;
             msg += `*Nama:* ${name}\n`;
             msg += `*Alamat:* ${addr}\n`;
-            msg += `*Status Ongkir:* ${totalBelanja >= MIN_FREE_ONGKIR ? 'GRATIS (Promo Belanja >50rb)' : 'Berbayar (Dibawah 50rb)'}\n\n`;
+            
+            if (loc) msg += `*Lokasi Maps:* ${loc}\n`;
+
+            msg += `*Status Ongkir:* ${totalBelanja >= MIN_FREE_ONGKIR ? 'GRATIS (Senduro)' : 'Berbayar'}\n\n`;
             msg += `*Daftar Pesanan:*\n`;
 
             cart.forEach(item => {
@@ -330,15 +384,11 @@
             });
 
             msg += `\n*TOTAL TAGIHAN: Rp ${totalBelanja.toLocaleString()}*`;
-            
-            if (totalBelanja >= MIN_FREE_ONGKIR) {
-                msg += `\n\n_Catatan: Pelanggan ini mendapatkan Gratis Ongkir COD._`;
-            }
+            msg += `\n\n_Catatan: COD khusus wilayah Desa Senduro._`;
 
             const url = `https://wa.me/${ADMIN_WA}?text=${encodeURIComponent(msg)}`;
             window.open(url, '_blank');
             
-            // Bersihkan keranjang
             cart = [];
             updateCart();
             closeCheckout();
