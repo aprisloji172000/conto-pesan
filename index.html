@@ -188,14 +188,14 @@
         const MIN_FREE_ONGKIR = 50000;
 
         const menuData = [
-            { id: 1, name: "Nasi Goreng", price: 10000, icon: "🍳", hasOptions: true },
-            { id: 2, name: "Mie Goreng", price: 10000, icon: "🍜", hasOptions: true },
-            { id: 8, name: "Mawut", price: 10000, icon: "🍳", hasOptions: true },
-            { id: 3, name: "Es Teh", price: 3000, icon: "🍹", hasOptions: false },
-            { id: 4, name: "Teh Panas", price: 3000, icon: "☕", hasOptions: false },
-            { id: 5, name: "Es Jeruk", price: 3000, icon: "🥤", hasOptions: false },
-            { id: 6, name: "Jeruk Panas", price: 3000, icon: "🍵", hasOptions: false },
-            { id: 7, name: "Kerupuk", price: 1000, icon: "🍘", hasOptions: false }
+            { id: 1, name: "Nasi Goreng", price: 10000, icon: "🍳", hasOptions: true, category: "makanan" },
+            { id: 2, name: "Mie Goreng", price: 10000, icon: "🍜", hasOptions: true, category: "makanan" },
+            { id: 8, name: "Mawut", price: 10000, icon: "🍳", hasOptions: true, category: "makanan" },
+            { id: 3, name: "Es Teh", price: 3000, icon: "🍹", hasOptions: false, category: "minuman" },
+            { id: 4, name: "Teh Panas", price: 3000, icon: "☕", hasOptions: false, category: "minuman" },
+            { id: 5, name: "Es Jeruk", price: 3000, icon: "🥤", hasOptions: false, category: "minuman" },
+            { id: 6, name: "Jeruk Panas", price: 3000, icon: "🍵", hasOptions: false, category: "minuman" },
+            { id: 7, name: "Kerupuk", price: 1000, icon: "🍘", hasOptions: false, category: "makanan" }
         ];
 
         let cart = [];
@@ -367,24 +367,49 @@
             const noAntrian = `WD-${jam}${menit}${detik}`;
 
             let totalBelanja = 0;
-            cart.forEach(i => totalBelanja += (i.price * i.qty));
-
-            let msg = `*NOMOR ANTRIAN: ${noAntrian}*\n`;
-            msg += `*PESANAN BARU - Warung Digital*\n\n`;
-            msg += `*Nama:* ${name}\n`;
-            msg += `*Alamat:* ${addr}\n`;
-            
-            if (loc) msg += `*Lokasi Maps:* ${loc}\n`;
-
-            msg += `*Status Ongkir:* ${totalBelanja >= MIN_FREE_ONGKIR ? 'GRATIS (Senduro)' : 'Berbayar'}\n\n`;
-            msg += `*Daftar Pesanan:*\n`;
+            let makananArr = [];
+            let minumanArr = [];
 
             cart.forEach(item => {
-                msg += `- ${item.name} ${item.note} x${item.qty} = Rp ${(item.price * item.qty).toLocaleString()}\n`;
+                totalBelanja += (item.price * item.qty);
+                
+                // Format Note: Tebalkan Pedas/Biasa/Dadar/Ceplok
+                let formattedNote = item.note
+                    .replace(/Pedas/g, "*Pedas*")
+                    .replace(/Biasa/g, "*Biasa*")
+                    .replace(/Ceplok/g, "*Ceplok*")
+                    .replace(/Dadar/g, "*Dadar*");
+
+                const itemString = `✅ ${item.qty}x ${item.name.toUpperCase()} ${formattedNote}`;
+                
+                // Pisahkan Kategori berdasarkan category di menuData
+                if (item.category === "makanan") {
+                    makananArr.push(itemString);
+                } else {
+                    minumanArr.push(itemString);
+                }
             });
 
-            msg += `\n*TOTAL TAGIHAN: Rp ${totalBelanja.toLocaleString()}*`;
-            msg += `\n\n_Catatan: COD khusus wilayah Desa Senduro._`;
+            let msg = `*NOMOR ANTRIAN: ${noAntrian}*\n`;
+            msg += `----------------------------------\n\n`;
+            msg += `*Nama:* ${name}\n`;
+            msg += `*Alamat:* ${addr}\n`;
+            if (loc) msg += `*Maps:* ${loc}\n\n`;
+
+            msg += `*DAFTAR PESANAN*\n`;
+            
+            if (makananArr.length > 0) {
+                msg += `\n*--- MAKANAN ---*\n` + makananArr.join('\n');
+            }
+            
+            if (minumanArr.length > 0) {
+                msg += `\n\n*--- MINUMAN ---*\n` + minumanArr.join('\n');
+            }
+
+            msg += `\n\n----------------------------------\n`;
+            msg += `*TOTAL TAGIHAN: Rp ${totalBelanja.toLocaleString()}*\n`;
+            msg += `*ONGKIR:* ${totalBelanja >= MIN_FREE_ONGKIR ? '*GRATIS*' : 'BAYAR DI TEMPAT'}`;
+            msg += `\n\n_Catatan: Saat pengambilan pesanan dimohon menyertakan Nomor Antrian._`;
 
             const url = `https://wa.me/${ADMIN_WA}?text=${encodeURIComponent(msg)}`;
             window.open(url, '_blank');
